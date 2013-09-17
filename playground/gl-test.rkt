@@ -64,8 +64,8 @@
         
         (glBindBuffer GL_ARRAY_BUFFER triangle-vertex-buffer)
         (glBufferData GL_ARRAY_BUFFER (vector-length vertexes) (vector->gl-float-vector vertexes) GL_STATIC_DRAW)
-        #;(glBindBuffer GL_ARRAY_BUFFER triangle-color-buffer)
-        #;(glBufferData GL_ARRAY_BUFFER (vector-length color) (vector->gl-float-vector color) GL_STATIC_DRAW))
+        (glBindBuffer GL_ARRAY_BUFFER triangle-color-buffer)
+        (glBufferData GL_ARRAY_BUFFER (vector-length color) (vector->gl-float-vector color) GL_STATIC_DRAW))
       
       (define (draw) #f)
       (inspect #f)
