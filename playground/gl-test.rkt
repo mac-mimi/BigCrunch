@@ -19,6 +19,7 @@
 (define-syntax-rule (with-gl x ...)
   (begin
     (send c run (lambda () x ...))
+    (send c swap-gl-buffers)
     (send c refresh-now))) 
 
 (send f show #t)
