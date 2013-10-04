@@ -7,7 +7,7 @@
 ;; Bind the source code to the shader id
 (define (bind-id-to-src shader-id port)
   (define src-code (for/vector ((line (in-lines port))) line))
-  (define sizes (for/list ((line (in-vector src-code))) (string-length line)))
+  (define sizes (for/list ([line (in-vector src-code)]) (string-length line)))
   (define vsizes (list->s32vector sizes))
   (glShaderSource shader-id (vector-length src-code) src-code vsizes))
 

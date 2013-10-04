@@ -92,28 +92,28 @@
     (define zoom 1)
     
     (define/override (on-event event)
-      (let ((x (send event get-x))
-            (y (send event get-y)))
-        (case (send event get-event-type)
-          [(left-down)
-           (set! handle-motion
-                 (let ((old-x x) (old-y y))
-                   (lambda (new-x new-y)
-                     (set! x-rotation (+ x-rotation (- new-x old-x)))
-                     (set! y-rotation (+ y-rotation (- new-y old-y)))
-                     (set! old-x new-x)
-                     (set! old-y new-y)
-                     (refresh))))]
-          [(left-up)
-           (set! handle-motion void)]
-          [(motion) (handle-motion x y)])))
+      (define x (send event get-x))
+      (define y (send event get-y)) 
+      (case (send event get-event-type)
+        [(left-down)
+         (set! handle-motion
+               (let ([old-x x] [old-y y])
+                 (lambda (new-x new-y)
+                   (set! x-rotation (+ x-rotation (- new-x old-x)))
+                   (set! y-rotation (+ y-rotation (- new-y old-y)))
+                   (set! old-x new-x)
+                   (set! old-y new-y)
+                   (refresh))))]
+        [(left-up)
+         (set! handle-motion void)]
+        [(motion) (handle-motion x y)]))
     
     (define/override (on-char event)
       (case (send event get-key-code)
-        ((#\+) (set! zoom (* zoom 4/3)) (refresh))
-        ((#\-) (set! zoom (/ zoom 4/3)) (refresh))
-        ((wheel-up) (set! zoom (* zoom 9/8)) (refresh))
-        ((wheel-down) (set! zoom (/ zoom 9/8)) (refresh))))))
+        [(#\+) (set! zoom (* zoom 4/3)) (refresh)]
+        [(#\-) (set! zoom (/ zoom 4/3)) (refresh)]
+        [(wheel-up) (set! zoom (* zoom 9/8)) (refresh)]
+        [(wheel-down) (set! zoom (/ zoom 9/8)) (refresh)]))))
 
 
 (define (show-gl-info frame canvas)
