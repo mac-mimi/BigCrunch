@@ -38,31 +38,29 @@
 
 (define (init-resources)
 
-  (define s  1.0)
-  (define -s (- s))
   ;; GLfloat
   (define vbo-cube-vertices
-    (f64vector
+    (f32vector
      ;; Front
-     -s -s  s
-     s -s  s
-     s  s  s
-     -s  s  s
+     -1.0 -1.0 +1.0
+     +1.0 -1.0 +1.0
+     +1.0 +1.0 +1.0
+     -1.0 +1.0 +1.0
      ;; Back
-     -s -s -s
-     s -s -s
-     s  s -s
-     -s  s -s))
+     -1.0 -1.0 -1.0
+     +1.0 -1.0 -1.0
+     +1.0 +1.0 -1.0
+     -1.0 +1.0 -1.0))
   (set! vbo-cube-vertices-id
         (allocate-buffer
          vbo-cube-vertices
          ;; 96 bytes
-         (* (f64vector-length vbo-cube-vertices) (compiler-sizeof 'float))
+         (* (f32vector-length vbo-cube-vertices) (compiler-sizeof 'float))
          GL_ARRAY_BUFFER))
   ;;(printf (string-append "sizeof(cube_vertices): " (number->string (* (f64vector-length vbo-cube-vertices) (compiler-sizeof 'float)))))
 
   (define vbo-cube-colors
-    (f64vector
+    (f32vector
      ;; Front colors
      1.0 0.0 0.0
      1.0 0.0 0.0
@@ -77,12 +75,12 @@
         (allocate-buffer
          vbo-cube-colors
          ;; 96 bytes
-         (* (f64vector-length vbo-cube-vertices) (compiler-sizeof 'float))
+         (* (f32vector-length vbo-cube-vertices) (compiler-sizeof 'float))
          GL_ARRAY_BUFFER))
   ;;(printf (string-append "sizeof(cube_colors): " (number->string (* (f64vector-length vbo-cube-vertices) (compiler-sizeof 'float)))))
 
   (define ibo-cube-elements
-    (u32vector
+    (u16vector
      ;; Front
      0 1 2
      2 3 0
@@ -105,7 +103,7 @@
         (allocate-buffer
          ibo-cube-elements
          ;; 72 bytes
-         (* (u32vector-length ibo-cube-elements) (compiler-sizeof 'short))
+         (* (u16vector-length ibo-cube-elements) (compiler-sizeof 'short))
          GL_ELEMENT_ARRAY_BUFFER))
   ;;(printf (string-append "sizeof(cube_elements): " (number->string (* (u32vector-length ibo-cube-elements) (compiler-sizeof 'short)))))
 
@@ -172,22 +170,33 @@
   (glBindBuffer GL_ELEMENT_ARRAY_BUFFER ibo-cube-elements-id)
 
   ;; buffer-size is 144
-  (let ((buffer-size (s32vector-ref (glGetBufferParameteriv GL_ELEMENT_ARRAY_BUFFER GL_BUFFER_SIZE) 0)))
-    (glDrawElements GL_TRIANGLES
-                    ;; Checked: 2
-                    (/ buffer-size (compiler-sizeof 'short))
-                    GL_UNSIGNED_SHORT
-                    0))
+  (define buf-params (glGetBufferParameteriv GL_ELEMENT_ARRAY_BUFFER GL_BUFFER_SIZE))
+  (define buffer-size (s32vector-ref buf-params 0))
+  (glDrawElements GL_TRIANGLES
+                  ;; Checked: 2
+                  (/ buffer-size (compiler-sizeof 'short))
+                  GL_UNSIGNED_SHORT
+                  0)
   ;; GLushort is the same size as 'short
 
   (glDisableVertexAttribArray attribute-coord3d)
   (glDisableVertexAttribArray attribute-v-color)
 
   ;; Do the math
-  (define model (translate identity-mat4 #(0 0 -4)))
-  (define view (lookat #(0.0 2.0 0.0) #(0.0 0.0 -4.0) #(0.0 1.0 0.0)))
-  (define projection (perspective 45.0 0.5 0.1 10.0))
-  (define mvp (matrix* projection view model))
+  (define angle
+    (* (/ (current-elapsed-time) 1000.0) 45.0))
+  (define anim
+    (rotate identity-mat4 angle #(0 1 0)))
+  (define model
+    (translate identity-mat4 #(0 0 -4)))
+  (define view
+    (lookat #(0.0 2.0 0.0) #(0.0 0.0 -4.0) #(0.0 1.0 0.0)))
+  (define projection
+    (perspective 45.0
+                 (* 1.0 (/ (current-screen-width) (current-screen-height)))
+                 0.1 10.0))
+  (define mvp
+    (matrix* projection view model anim))
   (glUseProgram program-id)
   (glUniformMatrix4fv uniform-mvp 1 false (matrix->f32vector mvp)))
 
