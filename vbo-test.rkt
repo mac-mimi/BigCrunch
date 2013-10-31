@@ -43,21 +43,21 @@
   (define -s (- s))
   (define cube-vertex-data
     (f64vector -s -s  s
-               s -s  s
-               s  s  s
+                s -s  s
+                s  s  s
                -s  s  s
                -s -s -s
-               s -s -s
-               s  s -s
+                s -s -s
+                s  s -s
                -s  s -s))
   (define cube-normal-data
     (f64vector -s -s  s
-               s -s  s
-               s  s  s
+                s -s  s
+                s  s  s
                -s  s  s
                -s -s -s
-               s -s -s
-               s  s -s
+                s -s -s
+                s  s -s
                -s  s -s))
   (define cube-color-data
     (s32vector #xff000
@@ -77,7 +77,7 @@
      0 1 5 5 4 0
      1 5 6 6 2 1))
   
-  (define bufferSize #f)
+  ;(define bufferSize #f)
   
   ;; color-data ;;
   (set! cube-color-id (allocate-buffer cube-color-data s32vector-length GL_ARRAY_BUFFER))
