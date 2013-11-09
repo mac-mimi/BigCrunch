@@ -1,0 +1,1 @@
+("5.3.6" ("381c9b0641b45c8ca45dd36d3c3d77965def5bf2" . "0fea5f42f15d76fe3acc37bd0bca7d46590e7343") (collects #"ffi" #"unsafe.rkt") (collects #"ffi" #"vector.rkt") (collects #"racket" #"base.rkt") #"/Users/memes/Library/Racket/5.3.6/pkgs/installed/opengl/opengl/main.rkt" (collects #"racket" #"base" #"lang" #"reader.rkt"))

@@ -8,23 +8,24 @@
          "3d-math.rkt"
          "shader.rkt")
 
-(define vbo-cube-vertices-id #f) ; GLuint
-(define vbo-cube-colors-id #f)   ; GLuint
-(define ibo-cube-elements-id #f) ; GLuint
-(define program-id #f)           ; GLuint
+(define vbo-cube-vertices-id #f)
+(define vbo-cube-colors-id #f)
+(define ibo-cube-elements-id #f)
+(define program-id #f)
 
-(define attribute-coord3d #f)    ; GLint
-(define attribute-v-color #f)    ; GLint
-(define uniform-mvp #f)          ; GLint
+(define attribute-coord3d #f)
+(define attribute-v-color #f)
+(define uniform-mvp #f)
 
 ;; ==============================================================================
 ;; INIT RESOURCES
 ;; ==============================================================================
-(define (allocate-buffer bvector size type gl-ptr)
-  (define new-bufs (glGenBuffers 1)) ;;???
-  (define id (u32vector-ref new-bufs 0)) ; Returns buffer id
+;; ISSUE HERE!!!!
+(define (allocate-buffer bvector size type)
+  (define new-bufs (glGenBuffers 1))
+  (define id (u32vector-ref new-bufs 0))
   (define id-ty (tee 'gl->vet-conversion (gl-vector->type new-bufs)))
-  ;(define gl-ptr (gl-vector->cpointer bvector))
+  (define gl-ptr (gl-vector->cpointer bvector))
   (glBindBuffer type id)
   (glBufferData type size gl-ptr GL_STATIC_DRAW)
   (define-syntax-rule (debug e ...)
@@ -39,79 +40,51 @@
   (eprintf "~a: ~e\n" tag e)
   e)
 
-
 (define (init-resources)
   
   ;; GLfloat
   (define vbo-cube-vertices
     (f32vector
      ;; Front
-     ;; Starting bottom left corner and anti-clockwise
-     -1.0 -1.0 +1.0 
+     -1.0 -1.0 +1.0
      +1.0 -1.0 +1.0
      +1.0 +1.0 +1.0
      -1.0 +1.0 +1.0
      ;; Back
-     ;; Starting bottom left cornder and anti-clockwise
      -1.0 -1.0 -1.0
      +1.0 -1.0 -1.0
      +1.0 +1.0 -1.0
      -1.0 +1.0 -1.0))
-  
   (set! vbo-cube-vertices-id
         (allocate-buffer
          vbo-cube-vertices
          ;; 96 bytes
-         (gl-vector-sizeof vbo-cube-vertices)
-         ;;(* (f32vector-length vbo-cube-vertices) (compiler-sizeof 'float))
-         GL_ARRAY_BUFFER
-         (f32vector->cpointer vbo-cube-vertices)))
-  
-  
+         (* (f32vector-length vbo-cube-vertices) (compiler-sizeof 'float))
+         GL_ARRAY_BUFFER))
   ;;(printf (string-append "sizeof(cube_vertices): " (number->string (* (f64vector-length vbo-cube-vertices) (compiler-sizeof 'float)))))
-  
   
   (define vbo-cube-colors
     (f32vector
      ;; Front colors
-     ;; Starting bottom left corner and anti-clockwise
-     1.0 0.0 0.0  ; At (-1 -1 +1)
-     1.0 0.0 0.0  ; At (+1 -1 +1)
-     1.0 0.0 0.0  ; At (+1 +1 +1)
-     1.0 0.0 0.0  ; At (-1 +1 +1)
+     1.0 0.0 0.0
+     1.0 0.0 0.0
+     1.0 0.0 0.0
+     1.0 0.0 0.0
      ;; Back colors
-     ;; Starting bottom left corner and anti-clockwise
-     1.0 0.0 0.0  ; At (-1 -1 +1)
-     0.0 1.0 0.0  ; At (+1 -1 -1)
-     0.0 0.0 1.0  ; At (+1 +1 -1)
-     1.0 1.0 1.0)); At (-1 +1 -1)
-  (with-output-to-file "debug1.txt"
-    #:exists 'replace
-    #:mode 'binary
-    (lambda () 
-      (printf "~a\n~a\n" 
-              (f32vector->cpointer vbo-cube-colors)
-              (for/list ((x (f32vector->list vbo-cube-colors))) x))))
+     0.0 0.0 1.0
+     0.0 0.0 1.0
+     0.0 0.0 1.0
+     0.0 0.0 1.0))
   (set! vbo-cube-colors-id
         (allocate-buffer
          vbo-cube-colors
-         ;; 96 bytes 
-         ;;(* (f32vector-length vbo-cube-vertices) (compiler-sizeof 'float))
-         (gl-vector-sizeof vbo-cube-vertices)
-         GL_ARRAY_BUFFER
-         (f32vector->cpointer vbo-cube-colors)))
+         ;; 96 bytes
+         (* (f32vector-length vbo-cube-vertices) (compiler-sizeof 'float))
+         GL_ARRAY_BUFFER))
   ;;(printf (string-append "sizeof(cube_colors): " (number->string (* (f64vector-length vbo-cube-vertices) (compiler-sizeof 'float)))))
-  ;; 
-  ;;    5_ _ _ _4
-  ;;   /|      /|
-  ;; 2/_|_ _ 1/ |
-  ;; | 6|_ _ |_7|
-  ;; | /     | / 
-  ;;3|/_ _ _0|/
   
-  ;; Specify triangle faces counter-clockwise
   (define ibo-cube-elements
-    (u16vector   
+    (u16vector
      ;; Front
      0 1 2
      2 3 0
@@ -129,24 +102,13 @@
      1 0 4
      ;; Right
      3 2 6
-     6 7 3
-     ))
-  
-  (with-output-to-file "debug1.txt"
-    #:exists 'replace
-    #:mode 'binary
-    (lambda () 
-      (printf "~a\n" (u16vector->cpointer ibo-cube-elements))
-      (printf "~a\n" (for/list ((x (u16vector->list ibo-cube-elements))) x))))
-  
+     6 7 3))
   (set! ibo-cube-elements-id
         (allocate-buffer
          ibo-cube-elements
          ;; 72 bytes
-         ;;(* (u16vector-length ibo-cube-elements) (compiler-sizeof 'short))
-         (gl-vector-sizeof ibo-cube-elements)
-         GL_ELEMENT_ARRAY_BUFFER
-         (u16vector->cpointer ibo-cube-elements)))
+         (* (u16vector-length ibo-cube-elements) (compiler-sizeof 'short))
+         GL_ELEMENT_ARRAY_BUFFER))
   ;;(printf (string-append "sizeof(cube_elements): " (number->string (* (u32vector-length ibo-cube-elements) (compiler-sizeof 'short)))))
   
   ;; Shaders
@@ -214,27 +176,11 @@
   ;; buffer-size is 144
   (define buf-params (glGetBufferParameteriv GL_ELEMENT_ARRAY_BUFFER GL_BUFFER_SIZE))
   (define buffer-size (s32vector-ref buf-params 0))
-  ;; Takes a set of indices that refer to the vertices array
-  ;; Can specify any order and even the same vertex several times
-  
   (glDrawElements GL_TRIANGLES
-                  ;; 36
+                  ;; Checked: 2
                   (/ buffer-size (compiler-sizeof 'short))
                   GL_UNSIGNED_SHORT
                   0)
-  #|
-   (define ibo-cube-elements
-    (u16vector
-     4 5 6 7
-     1 2 6 5
-     0 1 5 4
-     0 3 2 1
-     0 4 7 3
-     2 3 7 6))
-  (glDrawElements GL_QUADS
-                  24
-                  GL_UNSIGNED_SHORT
-                  0)|# 
   ;; GLushort is the same size as 'short
   
   (glDisableVertexAttribArray attribute-coord3d)
@@ -251,13 +197,10 @@
     (lookat #(0.0 2.0 0.0) #(0.0 0.0 -4.0) #(0.0 1.0 0.0)))
   (define projection
     (perspective 45.0
-                 ;;(* 1.0 (/ (current-screen-width) (current-screen-height)))
-                 1.0
-                 3.0 ;; Didn't work with 0.1
-                 10.0))
+                 (* 1.0 (/ (current-screen-width) (current-screen-height)))
+                 0.1 10.0))
   (define mvp
-    ;;(matrix* projection view model anim))
-    (matrix* projection view model))
+    (matrix* projection view model anim))
   (glUseProgram program-id)
   (glUniformMatrix4fv uniform-mvp 1 false (matrix->f32vector mvp)))
 
