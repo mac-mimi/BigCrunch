@@ -50,7 +50,7 @@
     (define handle-motion void)
     (define x-rotation 0)
     (define y-rotation 0)
-    (define zoom 1)
+    (define zoom -100)
     (define start-time (current-inexact-milliseconds))
 
     ;; on-size is called when the window is resized
@@ -70,7 +70,7 @@
     (define/override (on-paint)
       (with-gl-context
        (lambda ()
-         (glClearColor 1.0 1.0 1.0 1.0) ;; Clear the color buffer /w darkish blue
+         (glClearColor 1.0 1.0 1.0 1.0)
 
          ;; Clear the buffers to preset values:
          ;; GL_COLOR_BUFFER_BIT: buffers that are currently enabled for color writing

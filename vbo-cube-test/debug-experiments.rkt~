@@ -1,0 +1,8 @@
+#lang racket
+  (with-output-to-file "debug1.txt"
+    #:exists 'replace
+    #:mode 'binary
+    (lambda () 
+      (printf "~a\n~a\n" 
+              (f32vector->cpointer vbo-cube-colors)
+              (for/list ((x (f32vector->list vbo-cube-colors))) x)))))

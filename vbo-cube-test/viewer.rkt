@@ -1,3 +1,4 @@
+
 ;; A simple viewer window for OpenGL.
 #lang racket/base
 (require racket/class
@@ -8,11 +9,13 @@
 (provide view
          current-elapsed-time
          current-screen-width
-         current-screen-height)
+         current-screen-height
+         znear)
 
 (define current-elapsed-time (make-parameter 0))
-(define current-screen-width (make-parameter 800))
-(define current-screen-height (make-parameter 600))
+(define current-screen-width (make-parameter 300))
+(define current-screen-height (make-parameter 300))
+(define znear 3.0)
 
 ;; glutDisplayFunc(...) -> on-paint
 ;; glutReshapeFunc(...) -> on-size
@@ -24,18 +27,13 @@
   ;; canvas% is a general purpose window for drawing and handling events
   (class canvas%
     (super-new)
-
-    ;; inherit the following methods
-    ;; with-gl-context:
-    ;; swap-gl-buffers: calls swap-gl-buffers on the result of get-gl-context
-    ;; refresh: enqueues an event to repaint the window
     (inherit with-gl-context swap-gl-buffers refresh)
-
-    (define width 1)
-    (define height 1)
+    
     (init-field draw)
     (init-field setup)
-
+    
+    (define start-time (current-inexact-milliseconds))
+    
     ;; Setup all resources and settings
     (define/public (setup-all)
       (with-gl-context
@@ -43,77 +41,41 @@
          (setup)
          (glEnable GL_BLEND)
          (glEnable GL_DEPTH_TEST)
+         (glDepthFunc GL_LESS)
          (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)))
       (printf "setup all called.\n"))
-
-    ;; Variables for key and mouse events
-    (define handle-motion void)
-    (define x-rotation 0)
-    (define y-rotation 0)
-    (define zoom -100)
-    (define start-time (current-inexact-milliseconds))
-
+    
     ;; on-size is called when the window is resized
     ;; Gives width and height in pixels of entire window
     (define/override (on-size new-width new-height)
       (with-gl-context
        (lambda ()
-         (set! width new-width)
-         (set! height new-height)
-         ;; Setup viewport in frame
-         ;; (0,0) is lower-left corner of viewport
-         (glViewport 0 0 new-width new-height))))
-
+         (parameterize ([current-screen-width new-width]
+                        [current-screen-height new-height])
+           ;; Setup viewport in frame
+           ;; (0,0) is lower-left corner of viewport
+           (glViewport 0 0 (current-screen-width) (current-screen-height))))))
+    
     ;; on-paint is called when the canvas is exposed or resized
     ;; so that the image in the canvas can be repainted.
     ;; (onDisplay)
     (define/override (on-paint)
       (with-gl-context
        (lambda ()
-         (glClearColor 1.0 1.0 1.0 1.0)
-
-         ;; Clear the buffers to preset values:
-         ;; GL_COLOR_BUFFER_BIT: buffers that are currently enabled for color writing
-         ;; GL_DEPTH_BUFFER_BIT: the depth buffer
-         (glClear (bitwise-ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-
          ;; Draw the model!
-         (parameterize ([current-screen-width width]
-                        [current-screen-height height]
-                        [current-elapsed-time (- (current-inexact-milliseconds)
-                                                 start-time)])
+         (parameterize ([current-elapsed-time 
+                         (- (current-inexact-milliseconds) start-time)]) 
            (draw))))
-      ;; Equivalent of glutSwapBuffers()
       (swap-gl-buffers))
-
-    ;;  on-event is called when the canvas receives a *mouse* event
-    (define/override (on-event event)
-      (define x (send event get-x))
-      (define y (send event get-y))
-      (case (send event get-event-type)
-        [(left-down)
-         (set! handle-motion
-               (let ([old-x x] [old-y y])
-                 (lambda (new-x new-y)
-                   (set! x-rotation (+ x-rotation (- new-x old-x)))
-                   (set! y-rotation (+ y-rotation (- new-y old-y)))
-                   (set! old-x new-x)
-                   (set! old-y new-y)
-                   (refresh))))]
-        [(left-up)
-         (set! handle-motion void)]
-        [(motion) (handle-motion x y)]))
-
-    ;; on-char is called when the canvas receives a *key* even
+    
+    ;; on-char is called when the canvas receives a *key* event
     (define/override (on-char event)
       (case (send event get-key-code)
-        [(#\+) (set! zoom (* zoom 4/3)) (refresh)]
-        [(#\-) (set! zoom (/ zoom 4/3)) (refresh)]
-        [(wheel-up) (set! zoom (* zoom 9/8)) (refresh)]
-        [(wheel-down) (set! zoom (/ zoom 9/8)) (refresh)]))))
+        [(#\+) (set! znear (+ znear 0.1)) (refresh)]
+        [(#\-) (set! znear (- znear 0.1)) (refresh)]))))
 
 ;; ============================================================================
-;; FUNCTION view (called by shader.rkt)
+;; Provided function: view
 ;; ============================================================================
 ;; Function Function ->
 (define (view model-render init-resources)
@@ -123,22 +85,22 @@
          [label "OpenGL viewer"]
          [width (current-screen-width)]
          [height (current-screen-height)]))
-
+  
   ;; Create our canvas with gl related setup
   (define canvas
     (new gl-viewer%
-         (style '(gl no-autoclear)) ;; canvas% field
-         (parent frame) ;; this canvas is held inside this frame
-         (draw model-render) ;; init the draw function
-         (setup init-resources))) ;; init the resources
-
+         (style '(gl no-autoclear)) ; canvas% field
+         (parent frame)             ; this canvas is held inside this frame
+         (draw model-render)        ; init the draw function
+         (setup init-resources)))   ; init the resources
+  
   (thread 
    (λ ()
      (let loop ()
        (sleep (/ 1.0 24.0))
        (send canvas refresh)
        (loop))))
-
+  
   ;; Show the frame which contains the canvas
   (send canvas setup-all)
   (send frame show #t))

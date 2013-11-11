@@ -12,7 +12,8 @@
          matrix->f64vector
          matrix->f32vector)
 
-(define identity-mat4 (identity-matrix 4))
+;; A 4x4 identity matrix with floats
+(define identity-mat4 (matrix-scale (identity-matrix 4) 1.0))
 
 (define (rotate m angle v)
   (define a angle)
@@ -130,14 +131,14 @@
 ;; up-vec: direction of the up vector
 (define (lookat eye-vec center-vec up-vec)
   (define norm-forward
-    (vector-normalize (vector- center-vec eye-vec))) ;ch
+    (vector-normalize (vector- center-vec eye-vec))) 
   (define norm-side
     (vector-normalize (vector* norm-forward (vector-normalize up-vec))))
   (define up
     (vector* norm-side norm-forward))
   (matrix*
    (matrix-stack (list
-                  (vec3->row4 norm-side) ; correct
+                  (vec3->row4 norm-side)
                   (vec3->row4 up)
                   (vec3->row4 (vector-negate norm-forward))
                   (row-matrix [0.0 0.0 0.0 1.0])))
